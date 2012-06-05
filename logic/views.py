@@ -1094,18 +1094,34 @@ def officer_uploadexcel(request):
         template_var["form"]=form
         if form.is_valid():
             try:
-                destination = open('temp.xls', 'wb+')
-                for chunk in request.FILES["file"].chunks():
-                    destination.write(chunk)
-                destination.close()
-                wk = xlrd.open_workbook("temp.xls")
+                wk = xlrd.open_workbook(file_contents =  request.FILES["file"].read())
                 content = u''
-                content += u'<tr><td>学号</td><td>姓名</td><td><input type="submit" value="确定上传" onclick="sureupload();" /></td>'\
+                content += u'<tr><td>学号</td><td>姓名</td><td></td>'\
                            u'<td><input type="text" name="url"  value="%s" id="url" style="display: none"></td></tr>'%("temp.xls")
                 for sh in wk.sheets():
                     for i in range(sh.nrows):
                         if i > 0 :
                             content += u'<tr><td>%s</td><td>%s</td><td></td></tr>' %(sh.cell_value(i,0),sh.cell_value(i,1) )
+                            usercardid = sh.cell_value(i,0)
+                            username = sh.cell_value(i,1)
+                            userid = User.objects.filter(username=usercardid)
+                            if len(userid) == 0:
+                                user = User.objects.create_user(username = usercardid,
+                                    email = "" , password = usercardid)
+                                user.is_staff = True
+                                user.save()
+                                depa = workerinfo.department
+                                userid = User.objects.get(username=usercardid)
+                                worker =  WorkerInfo( user = userid ,
+                                    name = username , department = depa,
+                                    accept = 0, photo_name = "0", photo_thumb = "0",phone = "0",if_manager_login = 0,
+                                )
+                                worker.save()
+                                currentMessage = CurrentMessage(worker = userid,currentNum = 0,currentMinID = 0, ifaddold = 0)
+                                currentMessage.save()
+                            else:
+                                template_var["msg"]="跳过部分已注册学号！"
+                template_var["msg"]="批量注册成功！"
                 template_var["show_excel"] = content
             except:
                 template_var["msg"]="文件路径或格式出错！"

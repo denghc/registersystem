@@ -874,11 +874,11 @@ def setMessage(request , form):
     return dajax.json()
 
 @dajaxice_register
-def sureupload(request , form):
+def sureupload(request, form ):
     dajax = Dajax()
     url = form["url"]
     try:
-        wk = xlrd.open_workbook(url)
+        wk = xlrd.open_workbook(file_contents =  request.FILES["file"].read())
         workerinfo = WorkerInfo.objects.get(user = request.user.id)
         for sh in wk.sheets():
             for i in range(sh.nrows):
@@ -1573,11 +1573,12 @@ def deleaveworker(request , form):
     dajax = Dajax()
     workerinfo = WorkerInfo.objects.get(id = int(form))
     user = User.objects.get(id = workerinfo.user.id)
-    currentMessage = CurrentMessage.objects.get(worker = user)
-    currentMessage.delete()
+    currentMessage = CurrentMessage.objects.filter(worker = user)
+    if(len(currentMessage) > 0):
+        currentMessage = CurrentMessage.objects.get(worker = user)
+        currentMessage.delete()
     user.delete()
     workerinfo.delete()
-    content = u''
     workerinfo = WorkerInfo.objects.get(user = request.user)
     allworkerlist = list(WorkerInfo.objects.filter(department = workerinfo.department ))
     content = u'<table ><tr class="att_name">'\
