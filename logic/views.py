@@ -65,12 +65,14 @@ def index(request):
             currentMessage.save()
         if workerinfo.accept == 2:
             content_oficer = gettotal_officerrecord(request)
+            work  = Work.objects.filter(department = workerinfo.department)
             return render_to_response('officer/officer_infomanage.html', {
                 'newworkernum':len(newworkerlist),
                 'num_leave': len(leave_officer),
                 'num_absenteesim': len(absenteeism_officer),
                 'num_late': len(late_officer),
                 'num_exchange' : num_total_officer,
+                'num_work' : len(work),
                 'workername':request.user.get_profile().name,
                 'cardid':request.user,
                 'whetherwork':u'有 '+ str(getifhaswork(request)) + u' ',
@@ -78,11 +80,13 @@ def index(request):
                 }, context_instance=RequestContext(request))
         elif(workerinfo.if_manager_login == 1 and workerinfo.accept == 1):
             content_list = gettotal_managerrecord(request)
+            work  = Work.objects.filter(administrator = request.user)
             return render_to_response('manager/manage_attendance.html', {
                 'num_leave': len(leave),
                 'num_absenteesim': len(absenteeism),
                 'num_late': len(late),
                 'num_exchange' : num_total,
+                'num_worktime': len(work),
                 'workername':request.user.get_profile().name,
                 'cardid':request.user,
                 'latelist':content_list,
@@ -245,6 +249,7 @@ def attendance(request):
     pexchange = Exchange.objects.filter(passivite_worker = request.user, state = 1)
     num_total = len(iexchange) + len(pexchange)
     currentMessage = CurrentMessage.objects.get(worker = request.user)
+    work = Work.objects.filter(worker = request.user)
     if currentMessage.ifaddold  == 1:
         currentMessage.ifaddold  = 0
         currentMessage.save()
@@ -255,6 +260,7 @@ def attendance(request):
         'num_absenteesim': len(absenteeism),
         'num_late': len(late),
         'num_exchange' : num_total,
+        'num_work':len(work),
         'new_num':len(unexchange),
         'whetherwork':u'有 '+ str(getifhaswork(request)) + u' ',
     }, context_instance=RequestContext(request))
@@ -418,6 +424,7 @@ def manage_attendance(request):
     content = gettotal_managerrecord(request)
     new_leave = Leave.objects.filter(administrator = request.user, state = 0)
     currentMessage = CurrentMessage.objects.get(worker = request.user)
+    work  = Work.objects.filter(administrator = request.user)
     if currentMessage.ifaddold  == 1:
         currentMessage.ifaddold  = 0
         currentMessage.save()
@@ -426,6 +433,7 @@ def manage_attendance(request):
         'num_absenteesim': len(absenteeism),
         'num_late': len(late),
         'num_exchange' : num_total,
+        'num_worktime': len(work),
         'workername':request.user.get_profile().name,
         'cardid':request.user,
         'latelist':content,
@@ -993,6 +1001,7 @@ def officer_infomanage(request):
     content = gettotal_officerrecord(request)
     newworkerlist = WorkerInfo.objects.filter(department = workerinfo.department , accept = -1)
     currentMessage = CurrentMessage.objects.get(worker = request.user)
+    work = Work.objects.filter(department =  workerinfo.department)
     if currentMessage.ifaddold  == 1:
         currentMessage.ifaddold  = 0
         currentMessage.save()
@@ -1002,6 +1011,7 @@ def officer_infomanage(request):
         'num_absenteesim': len(absenteeism),
         'num_late': len(late),
         'num_exchange' : num_total,
+        'num_work': len(work),
         'workername':request.user.get_profile().name,
         'cardid':request.user,
         'whetherwork':u'有 '+ str(getifhaswork(request)) + u' ',
@@ -1041,9 +1051,10 @@ def officer_queryInformation(request):
     content = u'<table ><tr class="att_name">'\
               u'<td class="att_wh3">队员姓名</td><td class="att_wh">学号</td><td class="att_wh">邮箱</td><td class="att_wh">电话</td><td class="att_wh2">操作</td>'
     for item in allworkerlist:
-        content += u'<tr><td class="att_wh">%s</td><td class="num_wh">%s</td><td class="att_wh">%s</td><td class="att_wh">%s</td><td>'\
-                   u'<input input type="submit"  value="请离队伍" onclick = "deleaveworker(%s)"/>'\
-                   u'</td></tr>' %(item.name, item.user.username, item.user.email, item.phone, item.id)
+        if(item.accept != 2):
+            content += u'<tr><td class="att_wh">%s</td><td class="num_wh">%s</td><td class="att_wh">%s</td><td class="att_wh">%s</td><td>'\
+                       u'<input input type="submit"  value="请离队伍" onclick = "deleaveworker(%s)"/>'\
+                       u'</td></tr>' %(item.name, item.user.username, item.user.email, item.phone, item.id)
     content += u'</tr></table>'
     newworkerlist = WorkerInfo.objects.filter(department = workerinfo.department , accept = -1)
     currentMessage = CurrentMessage.objects.get(worker = request.user)
@@ -1089,6 +1100,7 @@ def officer_selfinfo(request):
 def officer_uploadexcel(request):
     template_var={}
     template_var["msg"]="*请确认是xls文件（一二列分别为学号和姓名)"
+    workerinfo = WorkerInfo.objects.get(user = request.user.id)
     if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
         template_var["form"]=form
@@ -1114,8 +1126,7 @@ def officer_uploadexcel(request):
                                 userid = User.objects.get(username=usercardid)
                                 worker =  WorkerInfo( user = userid ,
                                     name = username , department = depa,
-                                    accept = 0, photo_name = "0", photo_thumb = "0",phone = "0",if_manager_login = 0,
-                                )
+                                    accept = 0, photo_name = "0", photo_thumb = "0",phone = "0",if_manager_login = 0)
                                 worker.save()
                                 currentMessage = CurrentMessage(worker = userid,currentNum = 0,currentMinID = 0, ifaddold = 0)
                                 currentMessage.save()

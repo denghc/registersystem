@@ -52,13 +52,14 @@
     	<td class="att_wh">旷工</td>
     	<td class="att_wh">迟到</td>
     	<td class="att_wh">换班</td>
+        <td class="att_wh">工时</td>
     </tr>
     <tr class="att_number">
         <td class="num_wh"><a href="javascript:void(0);" id = "openleave">{{ num_leave }}</a></td>
         <td class="num_wh"><a href="javascript:void(0);" id = "openabsenteesim">{{ num_absenteesim }}</a></td>
         <td class="num_wh"><a href="javascript:void(0);" id = "openlate">{{ num_late }}</a></td>
         <td class="num_wh"><a href="javascript:void(0);" id = "openexchange">{{ num_exchange }}</a></td>
-
+        <td class="num_wh"><a href="javascript:void(0);" id = "openwork">{{ num_work }}</a></td>
     </tr>
         </table>
     </div>
@@ -74,8 +75,9 @@
             <section id="absenlist" >
                 {{ sbsenlist|safe }}
             </section>
-
-    
+             <section id="worklist" >
+                 {{ worklist|safe }}
+             </section>
 	</div> 	
     </div>
 </div>  

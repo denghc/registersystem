@@ -17,12 +17,14 @@ def get_name(workerstr, add_id):
         if (ifadd == 1):
             if (str == '.'):
                 ifadd = 0
-                if int(id) == int(add_id):
-                    result += WorkerInfo.objects.get(user = int(id)).name
-                    result += u'（负责人）'
-                else:
-                    result += WorkerInfo.objects.get(user = int(id)).name
-                result += " , "
+                workerinfo = WorkerInfo.objects.filter(user = int(id))
+                if(len(workerinfo) == 1):
+                    if int(id) == int(add_id):
+                            result += WorkerInfo.objects.get(user = int(id)).name
+                            result += u'（负责人）'
+                    else:
+                            result += WorkerInfo.objects.get(user = int(id)).name
+                    result += " , "
             else:
                 id += str
         else:
@@ -40,8 +42,10 @@ def get_wishname(workerstr):
             if (ifadd == 1):
                 if (str == '.'):
                     ifadd = 0
-                    result += WorkerInfo.objects.get(user = int(id)).name
-                    result += " , "
+                    workerinfo = WorkerInfo.objects.filter(user = int(id))
+                    if(len(workerinfo) == 1):
+                        result += WorkerInfo.objects.get(user = int(id)).name
+                        result += " , "
                 else:
                     id += str
             else:
@@ -249,7 +253,7 @@ def gettotal_managerrecord(request):
              u'<div id="qingjia_list"><div class="window_title">历史记录</div><div class="clear_float"></div>'\
              u'<table width="300" border="0" align="left" cellspacing="1" id="table5" >'\
              u'<tr class="att_name"><td class="time_wh">学号</td><td class="time_wh">姓名</td>'\
-             u'<td class="time_wh">请假记录</td><td class="time_wh">旷工记录</td><td class="time_wh">迟到记录</td><td class="time_wh">换班记录</td></tr>'
+             u'<td class="time_wh">请假记录</td><td class="time_wh">旷工记录</td><td class="time_wh">迟到记录</td><td class="time_wh">换班记录</td><td class="time_wh">工时记录</td></tr>'
     workerinfo = WorkerInfo.objects.get(user = request.user)
     workerlist = WorkerInfo.objects.filter(department = workerinfo.department)
     for item in workerlist:
@@ -261,7 +265,8 @@ def gettotal_managerrecord(request):
         i_pexchange = Exchange.objects.filter(iadministrator = request.user, state = 1, passivite_worker = item.user)
         p_pexchange = Exchange.objects.filter(padministrator = request.user, state = 1,  passivite_worker = item.user)
         num_total = len(i_iexchange) + len(p_iexchange) + len(i_pexchange) + len(p_pexchange)
-        if(len(leave) != 0 or len(absenteeism) != 0 or len(late) != 0 or num_total!=0):
+        work = Work.objects.filter( worker = item.user)
+        if(len(leave) != 0 or len(absenteeism) != 0 or len(late) != 0 or num_total!=0 or len(work)!=0):
             result += u'<tr class="att_number"><td class="time_wh">%s</td><td class="time_wh">%s</td>'%(item.user.username,item.name)
             if(len(leave) != 0):
                 result += u'<td class="time_wh"><a href="javascript:void(0);" onclick="open_specificleave(%s , %s)" style="text-decoration: none" target="_blank" >%s</a></td>' %(item.user_id , request.user.id , len(leave))
@@ -279,6 +284,10 @@ def gettotal_managerrecord(request):
                 result += u'<td class="time_wh"><a href="javascript:void(0);" onclick="open_specificexchange(%s , %s)" style="text-decoration: none" target="_blank" >%s</a></td>' %(item.user_id , request.user.id ,  num_total)
             else:
                 result +=  u'<td class="time_wh">%s</a></td>'%( num_total)
+            if(len(work) != 0):
+                result += u'<td class="time_wh"><a href="javascript:void(0);" onclick="open_specificwork(%s , %s)" style="text-decoration: none" target="_blank" >%s</a></td>' %(item.user_id , request.user.id ,  len(work))
+            else:
+                result +=  u'<td class="time_wh">%s</a></td>'%( len(work))
     result += u'</table></div>'
     return result
 
@@ -287,7 +296,7 @@ def gettotal_officerrecord(request):
              u'<div id="qingjia_list"><div class="window_title">历史记录</div><div class="clear_float"></div>'\
              u'<table width="300" border="0" align="left" cellspacing="1" id="table5" >'\
              u'<tr class="att_name"><td class="time_wh">学号</td><td class="time_wh">姓名</td>'\
-             u'<td class="time_wh">请假记录</td><td class="time_wh">旷工记录</td><td class="time_wh">迟到记录</td><td class="time_wh">换班记录</td></tr>'
+             u'<td class="time_wh">请假记录</td><td class="time_wh">旷工记录</td><td class="time_wh">迟到记录</td><td class="time_wh">换班记录</td><td class="time_wh">工时记录</td></tr>'
     workerinfo = WorkerInfo.objects.get(user = request.user)
     workerlist = WorkerInfo.objects.filter(department = workerinfo.department)
     for item in workerlist:
@@ -297,7 +306,8 @@ def gettotal_officerrecord(request):
         iexchange = Exchange.objects.filter( state = 1, initiative_worker = item.user)
         pexchange = Exchange.objects.filter( state = 1, passivite_worker = item.user)
         num_total = len(iexchange) +  len(pexchange)
-        if(len(leave) != 0 or len(absenteeism) != 0 or len(late) != 0 or num_total!=0):
+        work = Work.objects.filter(worker = item.user)
+        if(len(leave) != 0 or len(absenteeism) != 0 or len(late) != 0 or num_total!=0 or len(work) != 0):
             result += u'<tr class="att_number"><td class="time_wh">%s</td><td class="time_wh">%s</td>'%(item.user.username,item.name)
             if(len(leave) != 0):
                 result += u'<td class="time_wh"><a href="javascript:void(0);" onclick="open_officer_specific_leave(%s )" ' \
@@ -319,12 +329,15 @@ def gettotal_officerrecord(request):
                           u'style="text-decoration: none" target="_blank" >%s</a></td>' %(item.user_id ,  num_total)
             else:
                 result +=  u'<td class="time_wh">%s</a></td>'%( num_total)
+            if(len(work) != 0):
+                result += u'<td class="time_wh"><a href="javascript:void(0);" onclick="open_officer_specific_work(%s )" '\
+                          u'style="text-decoration: none" target="_blank" >%s</a></td>' %(item.user_id ,   len(work))
+            else:
+                result +=  u'<td class="time_wh">%s</a></td>'%( len(work))
     result += u'</table></div>'
     return result
 
 def get_exchangelist(request,exchangelist , num):
-    if not exchangelist:
-        return ''
     if(num == 0):
         result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/>' \
                  u' <div id="qingjia_list"><div class="window_title">换班记录</div><div class="clear_float"></div>' \
@@ -363,8 +376,6 @@ def get_exchangelist(request,exchangelist , num):
     return result
 
 def get_latelist(request, latelist ):
-    if not latelist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> ' \
              u'<div id="qingjia_list"><div class="window_title">迟到记录</div><div class="clear_float"></div>' \
              u'<table width="300" border="0" align="left" cellspacing="1" id="table5" >' \
@@ -379,9 +390,22 @@ def get_latelist(request, latelist ):
     result += u'</table></div>'
     return result
 
+def get_worklist(request, worklist ):
+    result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
+             u'<div id="qingjia_list"><div class="window_title">工时记录</div><div class="clear_float"></div>'\
+             u'<table width="300" border="0" align="left" cellspacing="1" id="table5" >'\
+             u'<tr class="att_name"><td class="code_wh">编号</td><td class="time_wh">上班时间</td>'\
+             u'<td class="time_wh">上班班次</td><td class="reason_wh1">附加说明</td></tr>'
+    sum = 0
+    for item in worklist:
+        sum += 1
+        result += u'<tr class="att_number"><td class="code_wh">%s</td>'\
+                  u'<td class="time_wh">%s</td><td class="duty_wh">星期%s 班次%s</td>'\
+                  u'<td class="reason_wh1">%s</td></tr>'%(sum , item.time.date(), item.day, item.workorder,item.reason)
+    result += u'</table></div>'
+    return result
+
 def setorder(order):
-    if not order:
-        return ''
     result = u''
     if(order > 0):
         for i in range(order):
@@ -419,8 +443,6 @@ def setexchangeorder(order):
     return result
 
 def get_leavelist(request,leavelist ):
-    if not leavelist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
              u'<div id="qingjia_list"><div class="window_title">请假记录</div><div class="clear_float">'\
              u'</div><table width="300" border="0" align="left" cellspacing="1" id="table5" >'\
@@ -437,8 +459,6 @@ def get_leavelist(request,leavelist ):
     return result
 
 def get_absenteeismlist(request,absenteeismlist ):
-    if not absenteeismlist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
              u'<div id="qingjia_list"><div class="window_title">旷工记录</div><div class="clear_float"></div>'\
              u'<table width="300" border="0" align="left" cellspacing="1" id="table4" ><tr class="att_name">'\
@@ -454,8 +474,6 @@ def get_absenteeismlist(request,absenteeismlist ):
     return result
 
 def get_unexchangelist(request, unexchange_list ):
-    if not unexchange_list:
-        return ''
     result = u''
     for item in unexchange_list:
         iname = WorkerInfo.objects.get(user = item.initiative_worker).name
@@ -528,11 +546,13 @@ def get_messagelist(request, message , num ):
 
 def getsign_in(userid , schedule):
     result = u''
-    workerinfo = WorkerInfo.objects.get(user = userid)
-    result += u'<tr class="att_number"><td class="att_name att_wh">%s</td> ' \
-              u'<td class="att_name att_wh"><input name="signin" type="submit" class="refuse" value="签到" onclick = "signin_normal(%s);" />' \
-              u'<input name="signin" type="submit" class="refuse" value="迟到" onclick = "signin_late(%s);"/> </td>' \
-              u'<td class="reply_button1"></td></tr>'%(workerinfo.name, str(schedule.id) + ","+ str(userid), str(schedule.id) + ","+ str(userid))
+    workerinfo = WorkerInfo.objects.filter(user = userid)
+    if(len(workerinfo) == 1):
+        workerinfo = WorkerInfo.objects.get(user = userid)
+        result += u'<tr class="att_number"><td class="att_name att_wh">%s</td> ' \
+                  u'<td class="att_name att_wh"><input name="signin" type="submit" class="refuse" value="签到" onclick = "signin_normal(%s);" />' \
+                  u'<input name="signin" type="submit" class="refuse" value="迟到" onclick = "signin_late(%s);"/> </td>' \
+                  u'<td class="reply_button1"></td></tr>'%(workerinfo.name, str(schedule.id) + ","+ str(userid), str(schedule.id) + ","+ str(userid))
     return result
 
 def get_AttentenceList(schedule):
@@ -610,8 +630,6 @@ def get_workerresultlist(choose):
     return result
 
 def get_manager_exchangelist(request,exchangelist , num):
-    if not exchangelist:
-        return ''
     if(num == 0):
         result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/>'\
                  u' <div id="qingjia_list"><div class="window_title">换班记录</div><div class="clear_float"></div>'\
@@ -650,8 +668,6 @@ def get_manager_exchangelist(request,exchangelist , num):
     return result
 
 def get_manager_latelist(request, latelist ):
-    if not latelist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
              u'<div id="qingjia_list"><div class="window_title">迟到记录</div><div class="clear_float"></div>'\
              u'<table width="300" border="0" align="left" cellspacing="1" id="table3" >'\
@@ -672,9 +688,29 @@ def get_manager_latelist(request, latelist ):
     result += u'</table></div>'
     return result
 
+def get_manager_worklist(request, worklist ):
+    result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
+             u'<div id="qingjia_list"><div class="window_title">工时记录</div><div class="clear_float"></div>'\
+             u'<table width="300" border="0" align="left" cellspacing="1" id="table3" >'\
+             u'<tr class="att_name"><td class="code_wh">编号</td><td class="time_wh">学号</td><td class="time_wh">姓名</td><td class="time_wh">上班时间</td>'\
+             u'<td class="time_wh">上班班次</td><td class="reason_wh1">附加说明</td><td class="time_wh">删除操作</td></tr>'
+    sum = 0
+    for item in worklist:
+        sum += 1
+        workerinfo = WorkerInfo.objects.get(user = item.worker)
+        result += u'<tr class="att_number"><td class="code_wh">%s</td><td class="time_wh">%s</td><td class="time_wh">%s</td>'\
+                  u'<td class="time_wh">%s</td><td class="duty_wh">星期%s 班次%s</td>'\
+                  u'<form name="updatelate%s" method="post" action="" id= "updatelate%s" onsubmit="return false;"><td class="reason_wh1">'\
+                  u'<input type="text" name="late_id" style="display: none" value="%s" >'\
+                  u'<input type="text" name="reason_content" maxlength="20" value="%s" id="cardid" class="text-input">'\
+                  u'<input type="submit" value="提交" onclick="updatelate(%s);"  /><label id="msg%s" style="color: red;"></label></td></form>'\
+                  u'<td class="duty_wh"> <input name="qingjia" type="submit" id="qingjia" value="删除" onclick="deleatelate(%s)"  />'\
+                  u'</td></tr>'%(sum ,item.worker.username, workerinfo.name, item.time.date(), item.day, item.workorder, item.id, item.id, item.id, item.reason ,item.id, item.id, item.id)
+    result += u'</table></div>'
+    return result
+
+
 def get_manager_leavelist(request,leavelist ):
-    if not leavelist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
              u'<div id="qingjia_list"><div class="window_title">请假记录</div><div class="clear_float">'\
              u'</div><table width="300" border="0" align="left" cellspacing="1" id="table3" >'\
@@ -697,8 +733,6 @@ def get_manager_leavelist(request,leavelist ):
     return result
 
 def get_manager_absenteeismlist(request,absenteeismlist ):
-    if not absenteeismlist:
-        return ''
     result = u'<hr align="left" width="724" size="1" noshade="noshade" class="hr"/> '\
              u'<div id="qingjia_list"><div class="window_title">旷工记录</div><div class="clear_float"></div>'\
              u'<table width="726" border="0" align="left" cellspacing="1" id="table3" ><tr class="att_name">'\

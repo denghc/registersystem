@@ -345,6 +345,7 @@ def openleave(request):
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
     dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -357,6 +358,7 @@ def openabsenteesim(request):
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -369,6 +371,20 @@ def openlate(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
+    return dajax.json()
+
+@dajaxice_register
+def openwork(request):
+    dajax = Dajax()
+    work = Work.objects.filter(worker = request.user)
+    work_list = list(Work.objects.filter(worker = request.user).order_by('time')[:len(work)])
+    content = get_worklist( request, work_list)
+    dajax.assign('#latelist', 'innerHTML', "")
+    dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#leavelist', 'innerHTML', "")
+    dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', content)
     return dajax.json()
 
 @dajaxice_register
@@ -383,6 +399,7 @@ def openexchange(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', content)
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -405,6 +422,7 @@ def open_specificleave(request, form):
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
     dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -427,6 +445,30 @@ def open_specificlate(request, form):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
+    return dajax.json()
+
+@dajaxice_register
+def open_specificwork(request, form):
+    dajax = Dajax()
+    wor_id  = u''
+    id = ''
+    for ch in form:
+        if ch == ',':
+            wor_id = id
+            id = u''
+        else:
+            id += ch
+    user_worker = User.objects.get(id =  int(wor_id))
+    manager = User.objects.get(id = int(id))
+    work = Work.objects.filter(worker = user_worker, administrator = manager)
+    work_list = list(Work.objects.filter(worker = user_worker, administrator = manager).order_by('time')[:len(work)])
+    content = get_manager_worklist( request, work_list)
+    dajax.assign('#latelist', 'innerHTML', "")
+    dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#leavelist', 'innerHTML', "")
+    dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', content)
     return dajax.json()
 
 @dajaxice_register
@@ -449,6 +491,7 @@ def open_specificabsenteeism(request, form):
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -478,6 +521,7 @@ def open_specificexchange(request, form):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', content)
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 def getdate(day):
@@ -772,6 +816,9 @@ def signin_normal(request, form):
         schedule.signindate = datetime.date.today()
         schedule.attendance = schedule.worker
     schedule.save()
+    user = User.objects.get(id = int(userid))
+    work = Work(worker = user, time = datetime.datetime.today() , reason = u'', day = schedule.day, workorder = schedule.workorder, administrator = schedule.administrator, department = schedule.department)
+    work.save()
     dajax.redirect("/manage_sign_in/",delay=0)
     return dajax.json()
 
@@ -798,6 +845,8 @@ def signin_late(request,form):
     user = User.objects.get(id = int(userid))
     late = Late(worker = user, time = datetime.datetime.today() , reason = u'', day = schedule.day, workorder = schedule.workorder, administrator = schedule.administrator, department = schedule.department)
     late.save()
+    work = Work(worker = user, time = datetime.datetime.today() , reason = u'', day = schedule.day, workorder = schedule.workorder, administrator = schedule.administrator, department = schedule.department)
+    work.save()
     dajax.redirect("/manage_sign_in/",delay=0)
     return dajax.json()
 
@@ -985,10 +1034,12 @@ def deletesedule(request):
     w_department  = workerinfo.department
     maxorder = w_department.department_worknum
     for i in range(7):
-        sedule = Schedule.objects.get(department =  w_department, workorder = maxorder,day = i + 1 )
-        newsedulechoose = ScheduleChoose.objects.get(schedule =  sedule)
-        newsedulechoose.delete()
-        sedule.delete()
+        sedule =  Schedule.objects.filter(department =  w_department, workorder = maxorder,day = i + 1 )
+        if(len(sedule) == 1):
+            sedule = Schedule.objects.get(department =  w_department, workorder = maxorder,day = i + 1 )
+            newsedulechoose = ScheduleChoose.objects.get(schedule =  sedule)
+            newsedulechoose.delete()
+            sedule.delete()
     w_department.department_worknum -= 1
     w_department.save()
     dajax.redirect("/officer_arrangement/",delay=0)
@@ -1253,6 +1304,7 @@ def open_manager_exchange(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', content)
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1265,6 +1317,7 @@ def open_manager_leave(request):
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
     dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1277,6 +1330,7 @@ def open_manager_absenteesim(request):
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1289,6 +1343,20 @@ def open_manager_late(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
+    return dajax.json()
+
+@dajaxice_register
+def open_manager_work(request):
+    dajax = Dajax()
+    work = Work.objects.filter(administrator = request.user)
+    work_list = list(Work.objects.filter(administrator = request.user).order_by('time')[:len(work)])
+    content = get_manager_worklist( request, work_list)
+    dajax.assign('#latelist', 'innerHTML', "")
+    dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#leavelist', 'innerHTML', "")
+    dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', content)
     return dajax.json()
 
 @dajaxice_register
@@ -1302,6 +1370,7 @@ def open_officer_exchange(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', content)
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1315,6 +1384,7 @@ def open_officer_leave(request):
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
     dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1328,6 +1398,7 @@ def open_officer_absenteesim(request):
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1341,6 +1412,21 @@ def open_officer_late(request):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
+    return dajax.json()
+
+@dajaxice_register
+def open_officer_work(request):
+    dajax = Dajax()
+    workerinfo = WorkerInfo.objects.get(user = request.user)
+    work = Work.objects.filter(department = workerinfo.department)
+    work_list = list(Work.objects.filter(department = workerinfo.department).order_by('time')[:len(work)])
+    content = get_manager_worklist( request, work_list)
+    dajax.assign('#latelist', 'innerHTML', "")
+    dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#leavelist', 'innerHTML', "")
+    dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', content)
     return dajax.json()
 
 @dajaxice_register
@@ -1356,6 +1442,7 @@ def open_officer_specific_exchange(request , form ):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', content)
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1369,6 +1456,7 @@ def open_officer_specific_leave(request, form):
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
     dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1382,6 +1470,7 @@ def open_officer_specific_absenteeism(request, form):
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#latelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
     return dajax.json()
 
 @dajaxice_register
@@ -1395,6 +1484,21 @@ def open_officer_specific_late(request, form):
     dajax.assign('#absenlist', 'innerHTML', "")
     dajax.assign('#leavelist', 'innerHTML', "")
     dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', "")
+    return dajax.json()
+
+@dajaxice_register
+def open_officer_specific_work(request, form):
+    dajax = Dajax()
+    workuser = User.objects.get(id = int(form))
+    work = Work.objects.filter(worker = workuser)
+    work_list = list(Work.objects.filter(worker = workuser).order_by('time')[:len(work)])
+    content = get_manager_worklist( request, work_list)
+    dajax.assign('#latelist', 'innerHTML', "")
+    dajax.assign('#absenlist', 'innerHTML', "")
+    dajax.assign('#leavelist', 'innerHTML', "")
+    dajax.assign('#exchangelist', 'innerHTML', "")
+    dajax.assign('#worklist', 'innerHTML', content)
     return dajax.json()
 
 @dajaxice_register

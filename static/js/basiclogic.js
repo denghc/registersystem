@@ -219,6 +219,11 @@ function open_specificexchange(worker_id, manager_id){
     var data = worker_id + "," + manager_id
     Dajaxice.RegisterSystem.logic.open_specificexchange(Dajax.process, {'form':data});
 }
+function open_specificwork(worker_id, manager_id){
+    var data = worker_id + "," + manager_id
+    Dajaxice.RegisterSystem.logic.open_specificwork(Dajax.process, {'form':data});
+}
+
 function open_officer_specific_leave(worker_id){
     Dajaxice.RegisterSystem.logic.open_officer_specific_leave(Dajax.process, {'form':worker_id});
 }
@@ -230,6 +235,9 @@ function open_officer_specific_absenteeism(worker_id){
 }
 function open_officer_specific_exchange(worker_id){
     Dajaxice.RegisterSystem.logic.open_officer_specific_exchange(Dajax.process, {'form':worker_id});
+}
+function open_officer_specific_work(worker_id){
+    Dajaxice.RegisterSystem.logic.open_officer_specific_work(Dajax.process, {'form':worker_id});
 }
 function settomanager(worker_id){
     Dajaxice.RegisterSystem.logic.settomanager(Dajax.process, {'form':worker_id});
@@ -305,6 +313,10 @@ $(function () {
         Dajaxice.RegisterSystem.logic.openexchange(Dajax.process);
     });
 
+    $('#openwork').click(function(){
+        Dajaxice.RegisterSystem.logic.openwork(Dajax.process);
+    });
+
     $('#open_manager_leave').click(function(){
         Dajaxice.RegisterSystem.logic.open_manager_leave(Dajax.process);
     });
@@ -319,6 +331,10 @@ $(function () {
 
     $('#open_manager_exchange').click(function(){
         Dajaxice.RegisterSystem.logic.open_manager_exchange(Dajax.process);
+    });
+
+    $('#open_manager_work').click(function(){
+        Dajaxice.RegisterSystem.logic.open_manager_work(Dajax.process);
     });
 
     $('#open_officer_leave').click(function(){
@@ -336,6 +352,11 @@ $(function () {
     $('#open_officer_exchange').click(function(){
         Dajaxice.RegisterSystem.logic.open_officer_exchange(Dajax.process);
     });
+
+    $('#open_officer_work').click(function(){
+        Dajaxice.RegisterSystem.logic.open_officer_work(Dajax.process);
+    });
+
 });
 
 function preview(img, selection) {

@@ -54,6 +54,15 @@ class Exchange(models.Model):
     iadministrator = models.ForeignKey(User ,related_name='+')
     department = models.ForeignKey(Department ,related_name='+')
 
+class Work(models.Model):
+    worker = models.ForeignKey(User  ,related_name='+' )
+    time = models.DateTimeField()
+    reason = models.TextField()
+    day = models.IntegerField()
+    workorder = models.IntegerField()
+    administrator = models.ForeignKey(User ,related_name='+')
+    department = models.ForeignKey(Department ,related_name='+')
+
 class Late(models.Model):
     worker = models.ForeignKey(User  ,related_name='+' )
     time = models.DateTimeField()
